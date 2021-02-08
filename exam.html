@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Exam</title>
+        {% load static %}
+        <link href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}" rel="stylesheet">
+        <link href="{% static 'mockexams/css/mock.css' %}" rel="stylesheet">
+        <link href="{% static 'mockexams/css/test.css' %}" rel="stylesheet">
+        <link href="{% static 'mockexams/css/testonly.css' %}" rel="stylesheet">
+    </head>
+    <body {% if userprofile.examination.name == 'UTME' %} onload="showSubject( USE_OF_ENGLISH )" {% endif %}>
+        <input type="hidden" value="{{starttime}}" id="st" />
+        <input type="hidden" value="{{duration}}" id="du" />
+        <input type="hidden" value="{{time_elapsed}}" id="et" />
+        <div class="container col-md-12">
+            <div class="col-md-12">
+                <div class="col-md-2">
+                    <img class="examimgcircle img-responsive" src="{% static 'mockexams/images/favicon.png' %}" alt="">
+                    <h4>{{ userprofile.first_name }} {{ userprofile.surname }}</h4>
+                    {% if error_message %}
+                    <h3 style="color: red;">{{ error_message }}</h3>
+                    {% else %}
+                    <p><b>ALERT:</b>Do not submit until you attempt all SUBJECTS and question(s)!</p>
+                    {% endif %}
+                    <h6 id="feed_back"></h6>
+                    <img src="{{ userprofile.passport.url }}" class="passport img-responsive"/>
+                    {% if userprofile.examination.name == 'UTME' %}
+                    <div  id="calcbox">
+                    <br><br>
+                    <button class="calck" onclick="myFunction()">CALCULATOR</button>
+                    <div id="myDIV">
+
+                        <div id="calculator">
+                            <!-- Screen and clear key -->
+                            <div class="top">
+                                <span class="clear">C</span>
+                                <div class="screen"></div>
+                            </div>
+                            
+                            <div class="keys">
+                                <!-- operators and other keys -->
+                                <span>7</span>
+                                <span>8</span>
+                                <span>9</span>
+                                <span class="operator">+</span>
+                                <span>4</span>
+                                <span>5</span>
+                                <span>6</span>
+                                <span class="operator">-</span>
+                                <span>1</span>
+                                <span>2</span>
+                                <span>3</span>
+                                <span class="operator">÷</span>
+                                <span>0</span>
+                                <span>.</span>
+                                <span class="eval">=</span>
+                                <span class="operator">x</span>
+                            </div>
+                        </div>
+                    </div>
+
+                &nbsp;
+                </div>
+                {% endif %}
+                </div>
+                <div class="col-md-9 questt">
+                    <form id="qform" action="" method="post">
+                        {% csrf_token %}
+                        {% regroup payload|dictsort:"question.subject" by question.subject as subject_list %}
+                        <div class="container contained">
+                            <ul class="nav nav-tabs">
+                                {% for subject in subject_list %}
+                                <li><a data-toggle="tab" href="#{{ subject.grouper }}" onclick="showSubject({{ subject.grouper }})" class="btn btn-success">{{ subject.grouper }}</a></li>
+                                {% endfor %}
+                            </ul>
+                            <div class="tab-content"> 
+                                {% for subject in subject_list %}
+                                <div id="{{ subject.grouper }}" class="tab-pane fade in">
+                                    <div class="well">
+                                        {% for question in subject.list %}
+                                        <li style="display: none;" class="welled" data-question="{{question.question.id}}">
+                                            <p><strong>Question {{ forloop.counter}}</strong></p>
+                                            <p>{{ question.question.question_text|safe }}</p>
+                                            {% if question.image %}
+                                            <img src="{{ question.image.url }}" class="img-responsive" style="width: 100px;" />
+                                            {% endif %}
+                                            <p>
+                                            <strong>A</strong>
+                                            
+                                            <input name="{{question.question.id}}" {%if question.selected_choice == 'a'%} checked="true" {% endif %} onchange="getUserChoice()" id="{{question.question.id}}_a" class="{{question.question.id}}" type='radio' value='a' >
+                                            {{question.question.a|safe}}
+                                            </p>
+                                            <p>
+                                            <strong>B</strong>
+                                            <input name="{{question.question.id}}" {%if question.selected_choice == 'b'%} checked="true" {% endif %} onchange="getUserChoice()" id="{{question.question.id}}_b" class="{{question.question.id}}" type='radio' value='b' >
+                                            {{question.question.b|safe}}</p>
+                                            <p>
+                                            <strong>C</strong>
+                                            <input name="{{question.question.id}}" {%if question.selected_choice == 'c'%} checked="true" {% endif %} onchange="getUserChoice()" id="{{question.question.id}}_c" class="{{question.question.id}}" type='radio' value='c' >
+                                            {{question.question.c|safe}}</p>
+                                            <p>
+                                            <strong>D</strong>
+                                            <input name="{{question.question.id}}" {%if question.selected_choice == 'd'%} checked="true" {% endif %} onchange="getUserChoice()" id="{{question.question.id}}_d" class="{{question.question.id}}" type='radio' value='d' >
+                                            {{question.question.d|safe}}</p>
+                                            {% if question.question.e %}
+                                            <p>
+                                            <strong>E</strong>
+                                            <input name="{{question.question.id}}" {%if question.selected_choice == 'e'%} checked="true" {% endif %} onchange="getUserChoice()" id="{{question.question.id}}_e" class="{{question.question.id}}" type='radio' value='e' >
+                                            {{question.question.e|safe}}</p>
+                                            {% endif %}
+                                        </li>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="question_numbers"></div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <input form="qform" type="submit" id="submit" value="SUBMIT" class="hidden">
+                    </form>
+                </div>
+                <div class="col-md-1">
+                    <div>
+                        <div id="clockdiv">
+                            <div>
+                                <span class="hours"></span>
+                                <div class="smalltext">Hours</div>
+                            </div>
+                            <div>
+                                <span id="minutes" class="minutes"></span>
+                                <div class="smalltext">Minutes</div>
+                            </div>
+                            <div>
+                                <span id="seconds" class="seconds"></span>
+                                <div class="smalltext">Seconds</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                <br>
+                </div>
+            </div>
+            <div class="col-md-12 btm">
+                <table>
+                    <tr>
+                        <td class="col-md-4">
+                            
+                        </td>
+                        <td class="col-md-4">
+                            
+                        </td>
+                        <td class="col-md-4">
+                            <button id="blkrd" onclick="displayPreviousQuestion()">PREVIOUS</button>
+                            <button id="blkrd" onclick="displayNextQuestion()">NEXT</button>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div id="mask">
+            <div id="dialog">
+
+            </div>
+        </div>
+
+
+        
+        
+        
+        <script src="{% static 'vendor/jquery/jquery.min.js' %}"></script>
+        <script src="{% static 'vendor/jquery-3.2.1.min.js' %}"></script>
+        <script type="text/javascript" src="{% static 'lh/subjectswitch.js' %}"></script>
+<!--         <script src="{% static 'lh/choice_ajax.js' %}" type="text/javascript"></script>
+ -->
+        <!-- PrefixFree -->
+<!--             <script src="{% static 'lh/calc.js' %}" type="text/javascript"></script>
+ -->        <script src="{% static 'vendor/bootstrap/js/bootstrap.min.js' %}"></script>
+    </body>
+</html>
